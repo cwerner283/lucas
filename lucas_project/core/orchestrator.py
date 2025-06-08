@@ -8,6 +8,8 @@ from typing import Any, Set
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import WebSocket
 
+from .utils import get_logger
+
 scheduler = AsyncIOScheduler()
 try:
     scheduler.start()
@@ -50,7 +52,21 @@ def register_job(*, trigger: str = "interval", **trigger_args: Any) -> Callable[
     """Register an async function as a scheduled job."""
 
     def decorator(func: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
-        scheduler.add_job(func, trigger, **trigger_args)
-        return func
+        logger = get_logger(func.__module__)
+
+        async def wrapped(*args: Any, **kwargs: Any) -> None:
+            try:
+                await func(*args, **kwargs)
+            except Exception:
+                logger.exception("Scheduled job %s failed", func.__name__)
+
+        scheduler.add_job(wrapped, trigger, **trigger_args)
+        return wrapped
 
     return decorator
+
+
+async def shutdown() -> None:
+    """Gracefully stop the scheduler."""
+    if scheduler.running:
+        scheduler.shutdown(wait=False)

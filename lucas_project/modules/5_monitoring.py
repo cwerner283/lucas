@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from lucas_project.core import get_db, get_logger, register_job
+from lucas_project.core import (
+    get_db,
+    get_logger,
+    register_job,
+    rate_limiter,
+    retry,
+    circuit_breaker,
+)
 
 logger = get_logger(__name__)
 
@@ -31,6 +38,9 @@ async def _drop_lowest_value(db, service: str) -> None:
         await db.execute("DELETE FROM monitors WHERE id = ?", (row[0],))
 
 
+@retry(3, backoff=1.0)
+@circuit_breaker(5, 60)
+@rate_limiter(max_calls=5, period=1.0)
 async def _add_monitor(db, domain_id: int, service: str) -> None:
     cap = UPTIME_ROBOT_CAP if service == "UptimeRobot" else FREE_DOMAIN_ALERTS_CAP
     if await _count_monitors(db, service) >= cap:

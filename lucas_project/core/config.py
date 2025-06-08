@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     database_url: str = "./lucas.db"
     llm_cache_path: Path = Path("./lucas_project/data/llm_cache.json")
     scheduler_timezone: str = "UTC"
+    github_token: str | None = None
+    whois_api_key: str | None = None
+    estibot_api_key: str | None = None
+    humbleworth_api_key: str | None = None
 
     class Config:
         env_prefix = "LUCAS_"
