@@ -9,7 +9,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import WebSocket
 
 scheduler = AsyncIOScheduler()
-scheduler.start()
+try:
+    scheduler.start()
+except RuntimeError:
+    # scheduler may be imported without an event loop (e.g. during migrations)
+    pass
 
 
 class WebSocketBroadcaster:
