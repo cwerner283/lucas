@@ -10,12 +10,12 @@ from fastapi import WebSocket
 
 from .utils import get_logger
 
+logger = get_logger(__name__)
 scheduler = AsyncIOScheduler()
 try:
     scheduler.start()
 except RuntimeError:
-    # scheduler may be imported without an event loop (e.g. during migrations)
-    pass
+    logger.exception("Scheduler failed to start")
 
 
 class WebSocketBroadcaster:
@@ -41,7 +41,9 @@ class WebSocketBroadcaster:
         for ws in list(self.connections):
             try:
                 await ws.send_text(message)
-            except Exception:
+            except Exception as exc:
+                logger.exception("WebSocket send failed", exc_info=exc)
+                await ws.close()
                 self.disconnect(ws)
 
 
@@ -57,8 +59,8 @@ def register_job(*, trigger: str = "interval", **trigger_args: Any) -> Callable[
         async def wrapped(*args: Any, **kwargs: Any) -> None:
             try:
                 await func(*args, **kwargs)
-            except Exception:
-                logger.exception("Scheduled job %s failed", func.__name__)
+            except Exception as exc:
+                logger.exception("Scheduled job %s failed", func.__name__, exc_info=exc)
 
         scheduler.add_job(wrapped, trigger, **trigger_args)
         return wrapped
