@@ -4,22 +4,39 @@ from __future__ import annotations
 
 import asyncio
 
-from lucas_project.core import LLMCache, get_db, get_logger, register_job
+from lucas_project.core import (
+    LLMCache,
+    get_db,
+    get_logger,
+    register_job,
+    rate_limiter,
+    retry,
+    circuit_breaker,
+)
 
 logger = get_logger(__name__)
 cache = LLMCache()
 
 
+@retry(3, backoff=1.0)
+@circuit_breaker(5, 60)
+@rate_limiter(max_calls=5, period=1.0)
 async def fetch_estibot(domain: str) -> float:
     await asyncio.sleep(0)
     return 100.0
 
 
+@retry(3, backoff=1.0)
+@circuit_breaker(5, 60)
+@rate_limiter(max_calls=5, period=1.0)
 async def fetch_humbleworth(domain: str) -> float:
     await asyncio.sleep(0)
     return 80.0
 
 
+@retry(3, backoff=1.0)
+@circuit_breaker(5, 60)
+@rate_limiter(max_calls=5, period=1.0)
 async def fetch_godaddy(domain: str) -> float:
     await asyncio.sleep(0)
     return 60.0
