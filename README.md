@@ -31,7 +31,7 @@ The most important ones are:
 | `LUCAS_GITHUB_TOKEN` | Optional GitHub token used when fetching trending repositories. |
 | `LUCAS_WHOIS_API_KEY` | API key for WHOIS lookups. |
 | `LUCAS_ESTIBOT_API_KEY` | API key for EstiBot valuations. |
-| `LUCAS_HUMBLEWORTH_API_KEY` | API key for HumbleWorth valuations. |
+| `LUCAS_HUMBLEWORTH_API_KEY` | Optional API key for HumbleWorth valuations (currently not required). |
 
 Create a `.env` file based on `.env.example` and fill in your credentials.
 
