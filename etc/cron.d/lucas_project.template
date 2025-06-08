@@ -1,0 +1,2 @@
+# Cron schedule mirroring orchestrator jobs
+0 * * * * lucas_user /usr/bin/python /opt/lucas/main.py
