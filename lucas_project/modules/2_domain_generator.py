@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from typing import Iterable
-import re
-from datetime import datetime, timezone
 
 from lucas_project.core import get_db, get_logger, register_job
+from datetime import datetime
 
 logger = get_logger(__name__)
 
@@ -14,12 +13,7 @@ logger = get_logger(__name__)
 def generate_domains(trends: Iterable[str]) -> list[str]:
     """Generate candidate domain names from trending phrases."""
 
-    domains = []
-    for trend in trends:
-        base = re.sub(r"[^a-zA-Z0-9-]", "", trend.replace(" ", ""))
-        if base:
-            domains.append(f"{base}.com")
-    return domains
+    return [f"{trend.replace(' ', '')}.com" for trend in trends]
 
 
 @register_job(trigger="interval", minutes=60)
@@ -34,7 +28,7 @@ async def run() -> None:
             for domain in domains:
                 await db.execute(
                     "INSERT OR IGNORE INTO domains (domain, trend_seed_id, status, created_at) VALUES (?, ?, ?, ?)",
-                    (domain, seed["id"], "new", datetime.now(timezone.utc)),
+                    (domain, seed["id"], "new", datetime.utcnow()),
                 )
         await db.commit()
         logger.info("Generated domains for %d seeds", len(seeds))

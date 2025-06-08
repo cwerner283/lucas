@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import time
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from typing import ParamSpec, TypeVar
@@ -33,21 +32,14 @@ def rate_limiter(max_calls: int, period: float) -> Callable[[Callable[P, Awaitab
 
     semaphore = asyncio.Semaphore(max_calls)
     interval = period / max_calls
-    last_called = 0.0
-    lock = asyncio.Lock()
 
     def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
         @wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            nonlocal last_called
             async with semaphore:
-                async with lock:
-                    now = asyncio.get_event_loop().time()
-                    wait_time = interval - (now - last_called)
-                    if wait_time > 0:
-                        await asyncio.sleep(wait_time)
-                    last_called = asyncio.get_event_loop().time()
-            return await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
+                await asyncio.sleep(interval)
+                return result
 
         return wrapper
 
@@ -61,11 +53,11 @@ class TokenBucket:
         self.capacity = rate
         self.tokens = float(rate)
         self.rate_per_sec = rate / per
-        self.updated_at = time.monotonic()
+        self.updated_at = asyncio.get_event_loop().time()
         self.lock = asyncio.Lock()
 
     def _refill(self) -> None:
-        now = time.monotonic()
+        now = asyncio.get_event_loop().time()
         elapsed = now - self.updated_at
         self.updated_at = now
         self.tokens = min(self.capacity, self.tokens + elapsed * self.rate_per_sec)
