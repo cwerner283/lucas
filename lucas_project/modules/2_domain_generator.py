@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Iterable
 
 from lucas_project.core import get_db, get_logger, register_job
-from datetime import datetime
+from datetime import datetime, UTC
 
 logger = get_logger(__name__)
 
@@ -28,7 +28,7 @@ async def run() -> None:
             for domain in domains:
                 await db.execute(
                     "INSERT OR IGNORE INTO domains (domain, trend_seed_id, status, created_at) VALUES (?, ?, ?, ?)",
-                    (domain, seed["id"], "new", datetime.utcnow()),
+                    (domain, seed["id"], "new", datetime.now(UTC)),
                 )
         await db.commit()
         logger.info("Generated domains for %d seeds", len(seeds))
