@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+
 import aiosqlite
 
 from .config import get_settings
@@ -20,3 +23,10 @@ async def get_db() -> aiosqlite.Connection:
         yield db
     finally:
         await db.close()
+
+
+def get_engine() -> Engine:
+    """Return a synchronous SQLAlchemy engine for migrations."""
+
+    settings = get_settings()
+    return create_engine(f"sqlite:///{settings.database_url}")
