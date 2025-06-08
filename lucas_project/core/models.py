@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -26,7 +26,9 @@ class Domain(Base):
     domain: Mapped[str] = mapped_column(String, unique=True, index=True)
     trend_seed_id: Mapped[int | None] = mapped_column(ForeignKey("trend_seeds.id"))
     status: Mapped[str] = mapped_column(String, default="new")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
     trend_seed: Mapped[TrendSeed | None] = relationship(back_populates="domains")
     availability_checks: Mapped[list["AvailabilityCheck"]] = relationship(
@@ -43,7 +45,9 @@ class AvailabilityCheck(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     domain_id: Mapped[int] = mapped_column(ForeignKey("domains.id"))
-    checked_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    checked_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
     available: Mapped[bool] = mapped_column(Boolean)
 
     domain: Mapped[Domain] = relationship(back_populates="availability_checks")
@@ -56,7 +60,9 @@ class Valuation(Base):
     domain_id: Mapped[int] = mapped_column(ForeignKey("domains.id"))
     service: Mapped[str] = mapped_column(String)
     value: Mapped[float] = mapped_column(Float)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
     domain: Mapped[Domain] = relationship(back_populates="valuations")
 
@@ -78,7 +84,9 @@ class Backorder(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     domain_id: Mapped[int] = mapped_column(ForeignKey("domains.id"))
     provider: Mapped[str] = mapped_column(String)
-    ordered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ordered_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
     domain: Mapped[Domain] = relationship(back_populates="backorders")
 
