@@ -1,7 +1,6 @@
 """Entry point for the Lucas project."""
 
-# Import the scheduler to ensure scheduled jobs are registered on startup.
-from lucas_project.core import scheduler  # noqa: F401
+from lucas_project.core import *  # noqa: F401,F403
 
 
 def main() -> None:
