@@ -1,6 +1,6 @@
 """Entry point for the Lucas project."""
 
-from lucas_project.core import *  # noqa: F401
+from lucas_project.core import *  # noqa: F401,F403
 
 
 def main() -> None:
