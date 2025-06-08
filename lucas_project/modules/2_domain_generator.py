@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Iterable
 
-from lucas_project.core import get_logger, register_job
+from lucas_project.core import get_db, get_logger, register_job
+from datetime import datetime
 
 logger = get_logger(__name__)
 
@@ -20,8 +20,16 @@ def generate_domains(trends: Iterable[str]) -> list[str]:
 async def run() -> None:
     """Generate domains using discovered trends."""
 
-    await asyncio.sleep(0)
-    trends = ["example"]
-    domains = generate_domains(trends)
-    logger.info("Generated domains: %s", domains)
+    async with get_db() as db:
+        async with db.execute("SELECT id, phrase FROM trend_seeds") as cursor:
+            seeds = await cursor.fetchall()
+        for seed in seeds:
+            domains = generate_domains([seed["phrase"]])
+            for domain in domains:
+                await db.execute(
+                    "INSERT OR IGNORE INTO domains (domain, trend_seed_id, status, created_at) VALUES (?, ?, ?, ?)",
+                    (domain, seed["id"], "new", datetime.utcnow()),
+                )
+        await db.commit()
+        logger.info("Generated domains for %d seeds", len(seeds))
 

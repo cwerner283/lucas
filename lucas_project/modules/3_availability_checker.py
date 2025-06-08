@@ -4,11 +4,20 @@ from __future__ import annotations
 
 import asyncio
 
-from lucas_project.core import get_db, get_logger, rate_limiter, register_job
+from lucas_project.core import (
+    get_db,
+    get_logger,
+    rate_limiter,
+    register_job,
+    retry,
+    circuit_breaker,
+)
 
 logger = get_logger(__name__)
 
 
+@retry(3, backoff=1.0)
+@circuit_breaker(5, 60)
 @rate_limiter(max_calls=5, period=1.0)
 async def check_domain_availability(domain: str) -> bool:
     """Simulate a WHOIS call returning availability."""
