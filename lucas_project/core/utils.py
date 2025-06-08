@@ -46,6 +46,50 @@ def rate_limiter(max_calls: int, period: float) -> Callable[[Callable[P, Awaitab
     return decorator
 
 
+class TokenBucket:
+    """Asynchronous token bucket rate limiter."""
+
+    def __init__(self, rate: int, per: float) -> None:
+        self.capacity = rate
+        self.tokens = float(rate)
+        self.rate_per_sec = rate / per
+        self.updated_at = asyncio.get_event_loop().time()
+        self.lock = asyncio.Lock()
+
+    def _refill(self) -> None:
+        now = asyncio.get_event_loop().time()
+        elapsed = now - self.updated_at
+        self.updated_at = now
+        self.tokens = min(self.capacity, self.tokens + elapsed * self.rate_per_sec)
+
+    async def acquire(self, tokens: int = 1) -> None:
+        while True:
+            async with self.lock:
+                self._refill()
+                if self.tokens >= tokens:
+                    self.tokens -= tokens
+                    return
+                deficit = tokens - self.tokens
+                wait_time = deficit / self.rate_per_sec
+            await asyncio.sleep(wait_time)
+
+
+def token_bucket(rate: int, per: float) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
+    """Decorate async functions with a token bucket limiter."""
+
+    bucket = TokenBucket(rate, per)
+
+    def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
+        @wraps(func)
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            await bucket.acquire()
+            return await func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 def retry(retries: int = 3, backoff: float = 1.0) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
     """Retry an async function on failure using exponential backoff."""
 
